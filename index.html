@@ -3,87 +3,177 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>MonstRoute Ver.0.6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MonstRoute Ver.1.2</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101725;color:#f1f5ff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-main{max-width:850px;margin:auto;padding:14px}
-h1{font-size:23px;margin:10px 0}
-p{line-height:1.6;color:#b9c9de}
-.panel{background:#1e2b40;border:1px solid #354861;border-radius:13px;padding:13px;margin:12px 0}
-.toolbar{display:flex;flex-wrap:wrap;gap:7px}
-button,.fileBtn{padding:10px 12px;background:#31435e;border:1px solid #59708d;border-radius:9px;color:white;font-size:14px;cursor:pointer}
-button.active{background:#116e9e;border-color:#69d4ff}
-button.primary{background:#08796d;border-color:#40dfc2;font-weight:bold}
-.fileBtn{display:inline-block}
+body{
+ margin:0;background:#101827;color:#f2f6ff;
+ font-family:-apple-system,BlinkMacSystemFont,sans-serif
+}
+main{max-width:850px;margin:auto;padding:12px}
+h1{font-size:23px;margin:12px 0}
+p{color:#bdcbe0;line-height:1.6}
+.panel{
+ background:#1e2b40;border:1px solid #394c65;
+ border-radius:14px;padding:13px;margin:12px 0
+}
+button,select,.filebtn{
+ font:inherit;color:#fff;background:#30445f;
+ border:1px solid #5a718f;border-radius:9px;
+ padding:9px;cursor:pointer
+}
+button.active{background:#087ca9;border-color:#80ddff}
+button.primary{
+ background:#087968;border-color:#4ee1bd;font-weight:bold
+}
+button:disabled{opacity:.35}
 input[type=file]{display:none}
 input[type=range]{width:100%}
-.stage{border:1px solid #485b75;border-radius:10px;overflow:hidden;background:#090d16;touch-action:none}
-canvas{display:block;width:100%;height:auto;touch-action:none}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.result{width:100%;display:block;text-align:left;margin-top:8px;line-height:1.6}
-.result.selected{background:#18556a;border-color:#72d9ee}
-#status{white-space:pre-line;font-size:14px;line-height:1.7}
-small{color:#afbed3}
-.note{font-size:13px;color:#ffd49c}
-@media(max-width:520px){.grid{grid-template-columns:1fr}main{padding:9px}}
+.row{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.field{margin:12px 0}
+.field label{display:block;margin-bottom:7px}
+.stage{
+ background:#0b1120;border:1px solid #4b5d75;
+ border-radius:12px;overflow:hidden
+}
+canvas{
+ display:block;width:100%;height:auto;
+ touch-action:pan-y;user-select:none;-webkit-user-select:none
+}
+.stage.editing canvas{touch-action:none}
+.hidden{display:none!important}
+.step{
+ background:#283951;border:1px solid #49607c;
+ border-radius:10px;padding:10px;margin:8px 0
+}
+.step .row{margin-top:7px}
+.step button{padding:6px 10px}
+.result{
+ display:block;width:100%;text-align:left;
+ margin:7px 0;line-height:1.6
+}
+.result.active{background:#16536a}
+#status{white-space:pre-line;line-height:1.7;font-size:14px}
+.small{font-size:13px;color:#b8c8de}
+.warning{color:#ffd49a}
+.ruleNote{font-size:12px;color:#a9bed6;margin-top:6px}
+select{max-width:100%}
+.angleBox{
+ padding:12px;background:#142c3a;
+ border:1px solid #315c69;border-radius:12px
+}
+.angleValue{
+ font-size:27px;font-weight:bold;color:#70ffaf;
+ font-variant-numeric:tabular-nums
+}
 </style>
 </head>
 <body>
 <main>
-<h1>🎯 MonstRoute <small>Ver.0.6</small></h1>
-<p>ボスを経由して、できるだけ多くの壁に触れてからゴールに向かう角度を探します。</p>
+
+<h1>🎯 MonstRoute <small>Ver.1.2</small></h1>
+<p>キャラ1体の軌道を見やすく表示し、ゴール位置や発射角度を微調整できます。</p>
 
 <section class="panel">
-<label class="fileBtn">
-📷 スクショを読み込む
-<input id="file" type="file" accept="image/*">
-</label>
-<button id="demo">画像なしで試す</button>
+ <label class="filebtn">
+  📷 スクショを読み込む
+  <input id="file" type="file" accept="image/*">
+ </label>
+ <button id="demo">画像なしで試す</button>
+ <p class="small">盤面の初期配置は以前のスクショを基準にした推定値です。</p>
 </section>
 
 <section class="panel">
-<div class="toolbar">
-<button data-mode="board" class="active">① 盤面</button>
-<button data-mode="start">② スタート</button>
-<button data-mode="boss">③ ボス</button>
-<button data-mode="goal">④ ゴール</button>
-<button data-mode="move">✋ 移動・調整</button>
-<button id="reset">配置リセット</button>
-</div>
-<p id="hint" style="font-size:13px">盤面の左上から右下へドラッグ</p>
-</section>
-
-<div class="stage">
-<canvas id="canvas" width="720" height="1150"></canvas>
-</div>
-
-<section class="panel">
-<div class="grid">
-<div>
-<label>最大反射回数：<b id="bounceLabel">12</b></label>
-<input id="bounce" type="range" min="1" max="24" value="12">
-</div>
-<div>
-<label>判定の余裕：<b id="marginLabel">10</b> px</label>
-<input id="margin" type="range" min="0" max="50" value="10">
-</div>
-</div>
-<p style="font-size:13px">ボスとゴールは円形。中心からドラッグして大きさを指定できます。移動・調整モードでは円の中心付近で移動、円周付近でサイズ変更できます。</p>
-<div class="toolbar">
-<button id="search" class="primary">🔍 ルートを自動探索</button>
-<button id="clear">ルートを消す</button>
-</div>
+ <h3>① ルート条件</h3>
+ <p class="small">
+  「触れる」「壁」は上から順番に判定します。
+  「触れない」はルート全体の禁止条件です。
+ </p>
+ <div class="step"><b>🟢 スタート</b></div>
+ <div id="steps"></div>
+ <div class="row">
+  <select id="newType">
+   <option value="boss">ボス</option>
+   <option value="object">オブジェクト</option>
+   <option value="wall">壁</option>
+   <option value="goal">ゴール</option>
+  </select>
+  <button id="addStep">＋ 条件を追加</button>
+ </div>
 </section>
 
 <section class="panel">
-<b>探索結果</b>
-<div id="status">スクショを読み込んで設定してください。</div>
-<div id="results"></div>
+ <h3>② 配置を合わせる</h3>
+ <div class="row">
+  <button id="edit">🔒 配置を編集</button>
+  <button id="show">👁 枠を表示</button>
+  <button id="reset">配置リセット</button>
+ </div>
+ <div id="editor" class="hidden">
+  <p class="small">対象を選んで画像上でドラッグ。ゴールを動かしたときは、選択中の軌道を基準に自動で微調整します。</p>
+  <div class="row">
+   <button data-item="board" class="active">盤面</button>
+   <button data-item="start">スタート</button>
+   <button data-item="boss">ボス</button>
+   <button data-item="object">オブジェクト</button>
+   <button data-item="goal">ゴール</button>
+  </div>
+  <div class="field">
+   <label>選択中のサイズ：<b id="sizeText"></b></label>
+   <input id="size" type="range">
+  </div>
+  <p id="editHint" class="small"></p>
+ </div>
 </section>
 
-<p class="note">※ 理想的な壁反射の試作版です。キャラの半径、敵との衝突、減速、地形ギミックなどは未対応です。画面上の角度は右向きが0°、下向きが90°です。</p>
+<div id="stage" class="stage">
+ <canvas id="canvas" width="720" height="1559"></canvas>
+</div>
+
+<section class="panel">
+ <h3>③ ルート探索</h3>
+ <div class="field">
+  <label>最大壁反射回数：<b id="bounceText">12</b></label>
+  <input id="bounce" type="range" min="1" max="24" value="12">
+ </div>
+ <div class="row">
+  <button id="search" class="primary">🔍 ルートを探索</button>
+  <button id="clear">結果を消す</button>
+ </div>
+</section>
+
+<section class="panel">
+ <h3>④ 軌道を微調整</h3>
+ <div class="angleBox">
+  <div class="row" style="justify-content:space-between">
+   <b>発射角度</b>
+   <span class="angleValue" id="angleValue">--.-°</span>
+  </div>
+  <input id="angle" type="range" min="0" max="359.9" step="0.1" value="0">
+  <div class="row">
+   <button id="minus">−0.1°</button>
+   <button id="plus">＋0.1°</button>
+   <button id="restore">探索角度に戻す</button>
+  </div>
+  <p class="small">
+   ゴールの円をドラッグしても、現在の角度の近くから
+   条件に合う軌道を探し直します。
+  </p>
+ </div>
+</section>
+
+<section class="panel">
+ <h3>探索結果</h3>
+ <div id="status">スクショを読み込んで配置と条件を設定してください。</div>
+ <div id="results"></div>
+</section>
+
+<p class="small warning">
+ ※ 壁は理想的な反射で計算しています。敵への接触による反射・減速、
+ 実際のゲーム内部の当たり判定は再現していません。
+</p>
+
 </main>
 
 <script>
@@ -91,512 +181,1140 @@ small{color:#afbed3}
 "use strict";
 
 const $ = id => document.getElementById(id);
-const canvas = $("canvas");
-const ctx = canvas.getContext("2d");
+const cv = $("canvas");
+const ctx = cv.getContext("2d");
 
-let image = null;
-let mode = "board";
-let drag = null;
-
-let board = {x:35,y:205,w:650,h:805};
-let start = {x:215,y:665};
-let boss = {x:530,y:365,r:100};
-let goal = {x:530,y:365,r:65};
-
-let candidates = [];
-let selected = -1;
-
-const W = () => canvas.width;
-const H = () => canvas.height;
+const W = () => cv.width;
+const H = () => cv.height;
+const EPS = 1e-8;
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const dist = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
+const normalizeAngle = a => ((a%360)+360)%360;
+const angleDiff = (a,b) =>
+ Math.abs(((a-b+540)%360)-180);
 
-function setMode(m){
- mode=m;
- document.querySelectorAll("[data-mode]").forEach(b=>{
-  b.classList.toggle("active",b.dataset.mode===m);
- });
- const hints={
-  board:"盤面の左上から右下へドラッグ",
-  start:"スタートするキャラの中心をタップ",
-  boss:"ボスの中心から外側へドラッグして円を設定",
-  goal:"ゴールの中心から外側へドラッグして円を設定",
-  move:"点や円をドラッグして位置・半径を調整"
- };
- $("hint").textContent=hints[m];
+let img = null;
+let visible = false;
+let editing = false;
+let selectedItem = "board";
+let drag = null;
+
+let board,start,boss,object,goal;
+let steps = [];
+let solutions = [];
+let selected = -1;
+let currentRoute = null;
+let originalAngle = null;
+let hasSearched = false;
+
+const names = {
+ wall:"壁",
+ boss:"ボス",
+ object:"オブジェクト",
+ goal:"ゴール"
+};
+
+function getObj(key){
+ return {start,boss,object,goal}[key];
 }
 
-document.querySelectorAll("[data-mode]").forEach(b=>{
- b.onclick=()=>setMode(b.dataset.mode);
-});
-
-function pointerPos(e){
- const r=canvas.getBoundingClientRect();
- return {
-  x:(e.clientX-r.left)*W()/r.width,
-  y:(e.clientY-r.top)*H()/r.height
- };
+function setStatus(text){
+ $("status").textContent = text;
 }
 
-function findHandle(p){
- const objects=[
-  {name:"goal",obj:goal},
-  {name:"boss",obj:boss}
+function clearRoutes(){
+ solutions = [];
+ selected = -1;
+ currentRoute = null;
+ originalAngle = null;
+ hasSearched = false;
+ $("results").innerHTML = "";
+ $("angleValue").textContent = "--.-°";
+}
+
+function initPositions(){
+ const w = W(),h = H();
+
+ board = {
+  x:w*.040,y:h*.190,
+  w:w*.920,h:h*.490
+ };
+
+ // スタートキャラの半径を少し大きめに設定
+ start = {
+  x:w*.240,y:h*.418,r:w*.055
+ };
+
+ boss = {
+  x:w*.505,y:h*.405,r:w*.155
+ };
+
+ object = {
+  x:w*.305,y:h*.365,r:w*.095
+ };
+
+ goal = {
+  x:w*.505,y:h*.405,r:w*.075
+ };
+
+ clearRoutes();
+ syncSize();
+ draw();
+}
+
+// =============================
+// 条件設定
+// =============================
+
+function modeOptions(type){
+ if(type==="wall"){
+  return [1,2,3,4].map(n=>
+   [String(n),"異なる"+n+"面に触れる"]
+  );
+ }
+
+ const base = [
+  ["touch","触れる"],
+  ["avoid","触れない"],
+  ["any","どちらでもいい"]
  ];
- for(const item of objects){
-  if(Math.abs(dist(p,item.obj)-item.obj.r)<24){
-   return {kind:"radius",name:item.name};
-  }
+
+ if(type==="goal"){
+  base.push(["last","最後に触れる"]);
  }
- if(dist(p,start)<30)return {kind:"start"};
- for(const item of objects){
-  if(dist(p,item.obj)<Math.min(35,item.obj.r)){
-   return {kind:"center",name:item.name};
-  }
- }
- return null;
+
+ return base;
 }
 
-canvas.addEventListener("pointerdown",e=>{
- e.preventDefault();
- canvas.setPointerCapture(e.pointerId);
- const p=pointerPos(e);
+function renderSteps(){
+ const root = $("steps");
+ root.innerHTML = "";
 
- if(mode==="board"){
-  drag={kind:"board",origin:p};
-  board={x:p.x,y:p.y,w:1,h:1};
- }else if(mode==="start"){
-  start=p;
-  drag={kind:"start"};
- }else if(mode==="boss"){
-  boss={...p,r:12};
-  drag={kind:"radius",name:"boss"};
- }else if(mode==="goal"){
-  goal={...p,r:12};
-  drag={kind:"radius",name:"goal"};
- }else{
-  drag=findHandle(p);
-  if(drag && drag.kind==="center"){
-   const obj=drag.name==="boss"?boss:goal;
-   drag.offset={x:p.x-obj.x,y:p.y-obj.y};
+ steps.forEach((step,i)=>{
+  const box = document.createElement("div");
+  box.className = "step";
+
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const title = document.createElement("b");
+  title.textContent = (i+2)+". "+names[step.type];
+
+  const mode = document.createElement("select");
+  for(const [value,label] of modeOptions(step.type)){
+   const option = document.createElement("option");
+   option.value = value;
+   option.textContent = label;
+   mode.appendChild(option);
+  }
+  mode.value = step.mode;
+
+  mode.onchange = ()=>{
+   step.mode = mode.value;
+   clearRoutes();
+   renderSteps();
+   draw();
+  };
+
+  const up = document.createElement("button");
+  up.textContent = "↑";
+  up.disabled = i===0;
+  up.onclick = ()=>{
+   [steps[i-1],steps[i]] = [steps[i],steps[i-1]];
+   clearRoutes();
+   renderSteps();
+   draw();
+  };
+
+  const down = document.createElement("button");
+  down.textContent = "↓";
+  down.disabled = i===steps.length-1;
+  down.onclick = ()=>{
+   [steps[i+1],steps[i]] = [steps[i],steps[i+1]];
+   clearRoutes();
+   renderSteps();
+   draw();
+  };
+
+  const del = document.createElement("button");
+  del.textContent = "削除";
+  del.onclick = ()=>{
+   steps.splice(i,1);
+   clearRoutes();
+   renderSteps();
+   draw();
+  };
+
+  row.append(title,mode,up,down,del);
+  box.appendChild(row);
+
+  const note = document.createElement("div");
+  note.className = "ruleNote";
+
+  if(step.mode==="avoid"){
+   note.textContent = "スタートから終了まで接触禁止";
+  }else if(step.mode==="any"){
+   note.textContent = "接触してもしなくてもOK";
+  }else if(step.mode==="last"){
+   note.textContent = "必要な条件を達成したあと、最後に接触";
+  }else if(step.type==="wall"){
+   note.textContent = "この順番以降の異なる壁を数える";
+  }else{
+   note.textContent = "この順番で接触";
+  }
+
+  box.appendChild(note);
+  root.appendChild(box);
+ });
+
+ const end = document.createElement("div");
+ end.className = "step";
+ end.textContent = "🏁 条件をすべて達成したら終了";
+ root.appendChild(end);
+}
+
+$("addStep").onclick = ()=>{
+ const type = $("newType").value;
+ steps.push({
+  type,
+  mode:type==="wall"?"1":"touch"
+ });
+ clearRoutes();
+ renderSteps();
+ draw();
+};
+
+function buildRules(){
+ const ordered = [];
+ const avoid = new Set();
+
+ for(const s of steps){
+  if(s.mode==="avoid"){
+   avoid.add(s.type);
+  }else if(s.mode!=="any"){
+   ordered.push({
+    type:s.type,
+    mode:s.mode,
+    count:s.type==="wall"?Number(s.mode):0
+   });
   }
  }
 
- candidates=[];
- selected=-1;
- $("results").innerHTML="";
- draw();
-});
+ return {ordered,avoid};
+}
 
-canvas.addEventListener("pointermove",e=>{
- if(!drag)return;
- e.preventDefault();
- const p=pointerPos(e);
+function validateRules(rules){
+ const conflict = rules.ordered.find(
+  r=>rules.avoid.has(r.type)
+ );
 
- if(drag.kind==="board"){
-  const a=drag.origin;
-  board={
-   x:Math.min(a.x,p.x),
-   y:Math.min(a.y,p.y),
-   w:Math.abs(p.x-a.x),
-   h:Math.abs(p.y-a.y)
-  };
- }else if(drag.kind==="start"){
-  start=p;
- }else if(drag.kind==="center"){
-  const obj=drag.name==="boss"?boss:goal;
-  obj.x=p.x-drag.offset.x;
-  obj.y=p.y-drag.offset.y;
- }else if(drag.kind==="radius"){
-  const obj=drag.name==="boss"?boss:goal;
-  obj.r=clamp(dist(p,obj),10,Math.min(W(),H())*.45);
+ if(conflict){
+  return names[conflict.type]+
+   "に「触れる」と「触れない」が同時に指定されています。";
  }
+
+ const lastIndex = rules.ordered.findIndex(
+  r=>r.mode==="last"
+ );
+
+ if(lastIndex>=0 && lastIndex!==rules.ordered.length-1){
+  return "「最後に触れる」は順番付き条件の一番最後に置いてください。";
+ }
+
+ return "";
+}
+
+// =============================
+// 配置編集
+// =============================
+
+function syncSize(){
+ if(!board)return;
+
+ const slider = $("size");
+
+ if(selectedItem==="board"){
+  slider.min = 45;
+  slider.max = 100;
+  slider.step = 1;
+  slider.value = Math.round(board.w/W()*100);
+
+  $("sizeText").textContent =
+   slider.value+"%（盤面幅）";
+
+  $("editHint").textContent =
+   "盤面内をドラッグして移動。幅と高さは連動します。";
+ }else{
+  const obj = getObj(selectedItem);
+
+  slider.min = selectedItem==="start"?8:15;
+  slider.max = selectedItem==="start"?100:240;
+  slider.step = 1;
+  slider.value = Math.round(obj.r);
+
+  $("sizeText").textContent =
+   Math.round(obj.r)+"px（半径）";
+
+  $("editHint").textContent =
+   selectedItem==="goal"
+    ?"ゴールをドラッグすると、選択中の軌道を基準に再探索します。"
+    :"円をドラッグして移動。スライダーで半径を変更します。";
+ }
+}
+
+function setItem(key){
+ selectedItem = key;
+
+ document.querySelectorAll("[data-item]").forEach(b=>{
+  b.classList.toggle("active",b.dataset.item===key);
+ });
+
+ syncSize();
  draw();
+}
+
+document.querySelectorAll("[data-item]").forEach(b=>{
+ b.onclick = ()=>setItem(b.dataset.item);
 });
 
-canvas.addEventListener("pointerup",()=>{drag=null;draw()});
-canvas.addEventListener("pointercancel",()=>{drag=null});
+function setEditing(value){
+ editing = value;
+ if(editing)visible = true;
 
-function drawCircle(obj,color,label){
- ctx.save();
+ $("stage").classList.toggle("editing",editing);
+ $("editor").classList.toggle("hidden",!editing);
+
+ $("edit").textContent = editing
+  ?"🔓 編集完了・ロック"
+  :"🔒 配置を編集";
+
+ $("show").textContent = visible
+  ?"🙈 枠を隠す"
+  :"👁 枠を表示";
+
+ draw();
+}
+
+$("edit").onclick = ()=>setEditing(!editing);
+
+$("show").onclick = ()=>{
+ visible = !visible;
+ if(!visible && editing)setEditing(false);
+
+ $("show").textContent = visible
+  ?"🙈 枠を隠す"
+  :"👁 枠を表示";
+
+ draw();
+};
+
+$("size").oninput = ()=>{
+ const value = +$("size").value;
+ const oldAngle = currentRoute?.angle;
+
+ if(selectedItem==="board"){
+  const ratio = board.h/board.w;
+  const cx = board.x+board.w/2;
+  const cy = board.y+board.h/2;
+
+  board.w = W()*value/100;
+  board.h = Math.min(H(),board.w*ratio);
+
+  board.x = clamp(cx-board.w/2,0,W()-board.w);
+  board.y = clamp(cy-board.h/2,0,H()-board.h);
+ }else{
+  getObj(selectedItem).r = value;
+ }
+
+ syncSize();
+
+ if(oldAngle!==undefined){
+  updateManualAngle(oldAngle);
+ }else{
+  draw();
+ }
+};
+
+function pointer(e){
+ const rect = cv.getBoundingClientRect();
+
+ return {
+  x:(e.clientX-rect.left)*W()/rect.width,
+  y:(e.clientY-rect.top)*H()/rect.height
+ };
+}
+
+cv.addEventListener("pointerdown",e=>{
+ if(!editing)return;
+
+ const p = pointer(e);
+ let hit = false;
+ let obj;
+
+ if(selectedItem==="board"){
+  obj = board;
+  hit = p.x>=board.x &&
+   p.x<=board.x+board.w &&
+   p.y>=board.y &&
+   p.y<=board.y+board.h;
+ }else{
+  obj = getObj(selectedItem);
+  hit = dist(p,obj)<=obj.r+18;
+ }
+
+ if(!hit)return;
+
+ e.preventDefault();
+ cv.setPointerCapture(e.pointerId);
+
+ drag = {
+  id:e.pointerId,
+  item:selectedItem,
+  dx:p.x-obj.x,
+  dy:p.y-obj.y
+ };
+});
+
+cv.addEventListener("pointermove",e=>{
+ if(!drag || drag.id!==e.pointerId)return;
+ e.preventDefault();
+
+ const p = pointer(e);
+ const key = drag.item;
+ const obj = key==="board"?board:getObj(key);
+
+ obj.x = clamp(
+  p.x-drag.dx,
+  0,
+  key==="board"?W()-board.w:W()
+ );
+
+ obj.y = clamp(
+  p.y-drag.dy,
+  0,
+  key==="board"?H()-board.h:H()
+ );
+
+ if(key==="goal" && currentRoute){
+  // ゴール移動中は現在の角度で軽く更新。
+  // 指を離したときに近い角度を再探索。
+  updateManualAngle(currentRoute.angle);
+ }else if(currentRoute){
+  updateManualAngle(currentRoute.angle);
+ }else{
+  draw();
+ }
+});
+
+function stopDrag(e){
+ if(!drag || drag.id!==e.pointerId)return;
+
+ const key = drag.item;
+ drag = null;
+
+ if(key==="goal" && currentRoute){
+  refineNearCurrent();
+ }
+}
+
+cv.addEventListener("pointerup",stopDrag);
+cv.addEventListener("pointercancel",stopDrag);
+
+// =============================
+// 軌道の描画
+// =============================
+
+function drawCircle(o,color,fill,label){
  ctx.beginPath();
- ctx.arc(obj.x,obj.y,obj.r,0,Math.PI*2);
- ctx.fillStyle=color==="boss"?"rgba(255,75,105,.13)":"rgba(255,215,60,.13)";
+ ctx.arc(o.x,o.y,o.r,0,Math.PI*2);
+ ctx.fillStyle = fill;
  ctx.fill();
- ctx.lineWidth=3;
- ctx.strokeStyle=color==="boss"?"#ff5e80":"#ffe063";
+
+ ctx.lineWidth = 3;
+ ctx.strokeStyle = color;
  ctx.stroke();
- ctx.fillStyle=color==="boss"?"#ffb4c4":"#fff2a4";
- ctx.font="bold 19px sans-serif";
- ctx.textAlign="center";
- ctx.fillText(label,obj.x,obj.y);
+
+ ctx.fillStyle = color;
+ ctx.font = "bold 17px sans-serif";
+ ctx.textAlign = "center";
+ ctx.fillText(label,o.x,o.y+5);
+}
+
+function drawArrow(a,b){
+ const dx = b.x-a.x;
+ const dy = b.y-a.y;
+ const len = Math.hypot(dx,dy);
+
+ if(len<35)return;
+
+ const ux = dx/len;
+ const uy = dy/len;
+
+ const x = a.x+dx*.55;
+ const y = a.y+dy*.55;
+
+ const size = 14;
+
+ ctx.beginPath();
+ ctx.moveTo(x+ux*size,y+uy*size);
+ ctx.lineTo(
+  x-ux*size*.65-uy*size*.55,
+  y-uy*size*.65+ux*size*.55
+ );
+ ctx.lineTo(
+  x-ux*size*.65+uy*size*.55,
+  y-uy*size*.65-ux*size*.55
+ );
+ ctx.closePath();
+
+ ctx.fillStyle = "#ffffff";
+ ctx.fill();
+ ctx.lineWidth = 2;
+ ctx.strokeStyle = "#12613d";
+ ctx.stroke();
+}
+
+function drawRoute(route){
+ if(!route || route.path.length<2)return;
+
+ ctx.save();
+ ctx.lineCap = "round";
+ ctx.lineJoin = "round";
+
+ ctx.beginPath();
+
+ route.path.forEach((p,i)=>{
+  if(i)ctx.lineTo(p.x,p.y);
+  else ctx.moveTo(p.x,p.y);
+ });
+
+ // キャラが通る幅
+ ctx.lineWidth = start.r*2;
+ ctx.strokeStyle = "rgba(65,255,150,.17)";
+ ctx.stroke();
+
+ // 黒い縁取り
+ ctx.lineWidth = 11;
+ ctx.strokeStyle = "rgba(0,0,0,.85)";
+ ctx.stroke();
+
+ // 軌道本体：色分けせず一色
+ ctx.lineWidth = 5;
+ ctx.strokeStyle = route.success
+  ?"#50ff9c"
+  :"#ffdc65";
+ ctx.shadowColor = route.success
+  ?"rgba(80,255,156,.8)"
+  :"rgba(255,220,101,.6)";
+ ctx.shadowBlur = 8;
+ ctx.stroke();
+ ctx.shadowBlur = 0;
+
+ // 進行方向の矢印
+ for(let i=1;i<route.path.length;i++){
+  drawArrow(route.path[i-1],route.path[i]);
+ }
+
+ // 壁の反射地点
+ route.hits.forEach((h,i)=>{
+  ctx.beginPath();
+  ctx.arc(h.x,h.y,11,0,Math.PI*2);
+  ctx.fillStyle = "#0c4769";
+  ctx.fill();
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 14px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(i+1,h.x,h.y+5);
+ });
+
  ctx.restore();
 }
 
 function draw(){
  ctx.clearRect(0,0,W(),H());
- if(image){
-  ctx.drawImage(image,0,0,W(),H());
+
+ if(img){
+  ctx.drawImage(img,0,0,W(),H());
  }else{
-  ctx.fillStyle="#111b2a";
+  ctx.fillStyle = "#111d2f";
   ctx.fillRect(0,0,W(),H());
  }
 
- ctx.save();
- ctx.strokeStyle="#55e5ff";
- ctx.lineWidth=3;
- ctx.setLineDash([10,7]);
- ctx.strokeRect(board.x,board.y,board.w,board.h);
- ctx.restore();
-
- drawCircle(boss,"boss","BOSS");
- drawCircle(goal,"goal","GOAL");
-
- ctx.beginPath();
- ctx.arc(start.x,start.y,10,0,Math.PI*2);
- ctx.fillStyle="#42f5a1";
- ctx.fill();
- ctx.strokeStyle="#063c2d";
- ctx.lineWidth=3;
- ctx.stroke();
- ctx.fillStyle="#aaffd7";
- ctx.font="bold 17px sans-serif";
- ctx.textAlign="left";
- ctx.fillText("START",start.x+13,start.y-10);
-
- if(selected>=0 && candidates[selected]){
-  const c=candidates[selected];
+ if(visible){
   ctx.save();
-  ctx.lineWidth=5;
-  ctx.lineJoin="round";
-  ctx.strokeStyle=c.success?"#50ff99":"#ffcc54";
-  ctx.shadowColor="#000";
-  ctx.shadowBlur=5;
-  ctx.beginPath();
-  c.path.forEach((p,i)=>{
-   if(i===0)ctx.moveTo(p.x,p.y);
-   else ctx.lineTo(p.x,p.y);
-  });
-  ctx.stroke();
-  ctx.shadowBlur=0;
-
-  c.wallHits.forEach((h,i)=>{
-   ctx.beginPath();
-   ctx.arc(h.x,h.y,12,0,Math.PI*2);
-   ctx.fillStyle="#103f62";
-   ctx.fill();
-   ctx.fillStyle="#fff";
-   ctx.font="bold 15px sans-serif";
-   ctx.textAlign="center";
-   ctx.fillText(String(i+1),h.x,h.y+5);
-  });
-
-  if(c.bossPoint){
-   ctx.beginPath();
-   ctx.arc(c.bossPoint.x,c.bossPoint.y,8,0,Math.PI*2);
-   ctx.fillStyle="#ff638a";
-   ctx.fill();
-  }
-  if(c.goalPoint){
-   ctx.beginPath();
-   ctx.arc(c.goalPoint.x,c.goalPoint.y,8,0,Math.PI*2);
-   ctx.fillStyle="#ffe35c";
-   ctx.fill();
-  }
+  ctx.setLineDash([10,7]);
+  ctx.strokeStyle = "#5ce4ff";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(board.x,board.y,board.w,board.h);
   ctx.restore();
+
+  drawCircle(
+   start,"#5dffae",
+   "rgba(60,255,160,.20)","START"
+  );
+  drawCircle(
+   boss,"#ff678c",
+   "rgba(255,70,110,.13)","BOSS"
+  );
+  drawCircle(
+   object,"#bc9aff",
+   "rgba(180,130,255,.13)","OBJ"
+  );
+  drawCircle(
+   goal,"#ffe16e",
+   "rgba(255,210,60,.13)","GOAL"
+  );
  }
+
+ drawRoute(currentRoute);
 }
 
-function circleEntry(a,b,c,r){
- const dx=b.x-a.x,dy=b.y-a.y;
- const A=dx*dx+dy*dy;
- if(A<1e-12)return null;
- const fx=a.x-c.x,fy=a.y-c.y;
- const B=2*(fx*dx+fy*dy);
- const C=fx*fx+fy*fy-r*r;
- const disc=B*B-4*A*C;
- if(disc<0)return null;
- const root=Math.sqrt(disc);
- const t1=(-B-root)/(2*A);
- const t2=(-B+root)/(2*A);
- let t=null;
- if(t1>=0&&t1<=1)t=t1;
- else if(t2>=0&&t2<=1)t=t2;
- else if(C<=0)t=0;
- if(t===null)return null;
- return {x:a.x+dx*t,y:a.y+dy*t,t};
+// =============================
+// 接触判定
+// =============================
+
+// 線分と円の「外から内への進入」を調べる。
+// 円の中から始まった場合は進入と数えない。
+function circleEntry(a,b,o,r){
+ const dx = b.x-a.x;
+ const dy = b.y-a.y;
+ const A = dx*dx+dy*dy;
+ if(A<EPS)return null;
+
+ const fx = a.x-o.x;
+ const fy = a.y-o.y;
+ const C = fx*fx+fy*fy-r*r;
+
+ if(C<=EPS)return null;
+
+ const B = 2*(fx*dx+fy*dy);
+ const D = B*B-4*A*C;
+ if(D<0)return null;
+
+ const t = (-B-Math.sqrt(D))/(2*A);
+ return t>=0 && t<=1?t:null;
 }
 
-function segmentDistance(a,b,c){
- const dx=b.x-a.x,dy=b.y-a.y;
- const l2=dx*dx+dy*dy;
- const t=l2===0?0:clamp(
-  ((c.x-a.x)*dx+(c.y-a.y)*dy)/l2,0,1
- );
+function pointAt(a,b,t){
  return {
-  d:Math.hypot(a.x+dx*t-c.x,a.y+dy*t-c.y),
-  point:{x:a.x+dx*t,y:a.y+dy*t},
-  t
+  x:a.x+(b.x-a.x)*t,
+  y:a.y+(b.y-a.y)*t
  };
 }
 
-function simulate(deg,maxBounces,margin){
- const rad=deg*Math.PI/180;
- let vx=Math.cos(rad),vy=Math.sin(rad);
- let p={...start};
- const x0=board.x,y0=board.y;
- const x1=x0+board.w,y1=y0+board.h;
+function insideCircle(p,o,r){
+ const dx=p.x-o.x;
+ const dy=p.y-o.y;
+ return dx*dx+dy*dy<r*r-1e-5;
+}
+
+function validStart(){
+ const L=board.x+start.r;
+ const R=board.x+board.w-start.r;
+ const T=board.y+start.r;
+ const B=board.y+board.h-start.r;
+
+ return board.w>2*start.r &&
+  board.h>2*start.r &&
+  start.x>L && start.x<R &&
+  start.y>T && start.y<B;
+}
+
+// =============================
+// 軌道シミュレーション
+// =============================
+
+function simulate(angle,maxBounces,rules){
+ angle=normalizeAngle(angle);
+
+ const rad=angle*Math.PI/180;
+ let vx=Math.cos(rad);
+ let vy=Math.sin(rad);
+
+ let p={x:start.x,y:start.y};
+
  const path=[{...p}];
- const wallHits=[];
- const afterBossWalls=new Set();
+ const hits=[];
 
- let touchedBoss=false;
- let bossPoint=null;
- let goalPoint=null;
+ let index=0;
+ let wallSeen=new Set();
+ let wallTotal=0;
+ let invalid=false;
  let success=false;
- let bestMiss=Infinity;
- let bestPoint=null;
- let bestPath=null;
- let bestWalls=0;
- let bestHits=0;
 
- for(let i=0;i<=maxBounces;i++){
-  const tx=vx>1e-10?(x1-p.x)/vx:
-           vx< -1e-10?(x0-p.x)/vx:Infinity;
-  const ty=vy>1e-10?(y1-p.y)/vy:
-           vy< -1e-10?(y0-p.y)/vy:Infinity;
+ const L=board.x+start.r;
+ const R=board.x+board.w-start.r;
+ const T=board.y+start.r;
+ const B=board.y+board.h-start.r;
+
+ const lastGoalIndex=rules.ordered.findIndex(
+  s=>s.type==="goal" && s.mode==="last"
+ );
+
+ // 接触禁止の対象に最初から重なっている場合
+ for(const type of rules.avoid){
+  if(type==="wall")continue;
+
+  const obj=getObj(type);
+  if(insideCircle(p,obj,obj.r+start.r)){
+   invalid=true;
+  }
+ }
+
+ if(invalid){
+  return {
+   angle,path,hits,success:false,
+   progress:0,wallTotal,invalid:true
+  };
+ }
+
+ if(rules.ordered.length===0){
+  return {
+   angle,path,hits,success:true,
+   progress:0,wallTotal
+  };
+ }
+
+ for(let bounce=0;bounce<=maxBounces;bounce++){
+  const tx=vx>EPS?(R-p.x)/vx:
+   vx< -EPS?(L-p.x)/vx:Infinity;
+
+  const ty=vy>EPS?(B-p.y)/vy:
+   vy< -EPS?(T-p.y)/vy:Infinity;
+
   const t=Math.min(tx,ty);
-  if(!Number.isFinite(t)||t< -1e-7)break;
+  if(!Number.isFinite(t)||t< -EPS)break;
 
-  const q={x:p.x+vx*t,y:p.y+vy*t};
+  const q={
+   x:p.x+vx*t,
+   y:p.y+vy*t
+  };
 
-  const bHit=!touchedBoss?circleEntry(p,q,boss,boss.r):null;
+  const events=[];
 
-  if(bHit){
-   touchedBoss=true;
-   bossPoint={x:bHit.x,y:bHit.y};
+  for(const type of ["boss","object","goal"]){
+   const obj=getObj(type);
+   const r=obj.r+start.r;
+   const entry=circleEntry(p,q,obj,r);
+
+   if(entry!==null){
+    events.push({
+     type,
+     t:entry,
+     point:pointAt(p,q,entry)
+    });
+   }
   }
 
-  // ボスに触れる前の区間はゴール判定しない。
-  const from=bHit?bHit:(touchedBoss?p:null);
+  events.sort((a,b)=>a.t-b.t);
 
-  if(from){
-   const gHit=circleEntry(from,q,goal,goal.r);
-   if(gHit){
-    goalPoint={x:gHit.x,y:gHit.y};
-    path.push(goalPoint);
-    success=true;
+  for(const event of events){
+   if(rules.avoid.has(event.type)){
+    path.push(event.point);
+    invalid=true;
     break;
    }
 
-   const nearest=segmentDistance(from,q,goal);
-   const miss=Math.max(0,nearest.d-goal.r);
+   const current=rules.ordered[index];
+   if(!current)break;
+
+   // 「最後にゴール」の前に触れたら失敗
    if(
-    miss<bestMiss ||
-    (Math.abs(miss-bestMiss)<1e-8 &&
-      afterBossWalls.size>bestWalls)
+    event.type==="goal" &&
+    lastGoalIndex>=index &&
+    index!==lastGoalIndex
    ){
-    bestMiss=miss;
-    bestPoint=nearest.point;
-    bestPath=[...path,q];
-    bestWalls=afterBossWalls.size;
-    bestHits=wallHits.filter(h=>h.afterBoss).length;
+    path.push(event.point);
+    invalid=true;
+    break;
+   }
+
+   if(current.type===event.type){
+    index++;
+    wallSeen=new Set();
+
+    if(index===rules.ordered.length){
+     path.push(event.point);
+     success=true;
+     break;
+    }
    }
   }
 
+  if(invalid||success)break;
+
   path.push(q);
-  if(i===maxBounces)break;
+
+  if(bounce===maxBounces)break;
 
   const sides=[];
+
   if(Math.abs(tx-t)<1e-6){
    sides.push(vx>0?"右":"左");
    vx=-vx;
   }
+
   if(Math.abs(ty-t)<1e-6){
    sides.push(vy>0?"下":"上");
    vy=-vy;
   }
 
-  if(sides.length===0)break;
+  if(!sides.length)break;
 
-  const afterBoss=touchedBoss;
-  if(afterBoss)sides.forEach(s=>afterBossWalls.add(s));
+  hits.push({...q,sides});
+  wallTotal+=sides.length;
 
-  wallHits.push({...q,sides,afterBoss});
-  p=q;
+  const current=rules.ordered[index];
+
+  if(current && current.type==="wall"){
+   sides.forEach(s=>wallSeen.add(s));
+
+   if(wallSeen.size>=current.count){
+    index++;
+    wallSeen=new Set();
+
+    if(index===rules.ordered.length){
+     success=true;
+     break;
+    }
+   }
+  }
+
+  // 境界から次の方向に少しだけ進めて
+  // 浮動小数点によるゼロ距離反射を防ぐ
+  p={
+   x:clamp(q.x+vx*.0001,L,R),
+   y:clamp(q.y+vy*.0001,T,B)
+  };
  }
 
- if(!touchedBoss)return null;
-
  return {
-  deg,
-  success,
-  path:success?path:(bestPath||path),
-  wallHits,
-  bossPoint,
-  goalPoint:success?goalPoint:bestPoint,
-  unique:success?afterBossWalls.size:bestWalls,
-  total:success
-   ?wallHits.filter(h=>h.afterBoss).reduce((n,h)=>n+h.sides.length,0)
-   :bestHits,
-  miss:success?0:bestMiss,
-  near:!success&&bestMiss<=margin
+  angle,path,hits,success,
+  progress:index,wallTotal,invalid
  };
 }
 
-function runSearch(){
- if(board.w<40||board.h<40){
-  $("status").textContent="盤面を設定してください。";
+// =============================
+// 結果表示
+// =============================
+
+function updateAngleUI(){
+ if(!currentRoute){
+  $("angleValue").textContent="--.-°";
   return;
  }
- if(
-  start.x<=board.x||start.x>=board.x+board.w||
-  start.y<=board.y||start.y>=board.y+board.h
- ){
-  $("status").textContent="スタートが盤面の外です。";
+
+ $("angleValue").textContent=
+  currentRoute.angle.toFixed(1)+"°";
+
+ $("angle").value=currentRoute.angle.toFixed(1);
+}
+
+function showRouteState(prefix=""){
+ if(!currentRoute)return;
+
+ const rules=buildRules();
+
+ setStatus(
+  (prefix?prefix+"\n":"")+
+  `発射角度：${currentRoute.angle.toFixed(1)}°
+条件達成：${currentRoute.progress}/${rules.ordered.length}
+壁反射：${currentRoute.wallTotal}回
+判定：${currentRoute.success?"✅ 条件達成":"⚠️ 条件未達成"}
+${currentRoute.invalid?"禁止条件への接触、または順番違反があります。":""}`
+ );
+
+ updateAngleUI();
+ draw();
+}
+
+function updateManualAngle(angle){
+ const rules=buildRules();
+ const error=validateRules(rules);
+
+ if(error){
+  setStatus(error);
+  return;
+ }
+
+ if(!validStart()){
+  setStatus("スタートキャラを盤面の内側に配置してください。");
+  return;
+ }
+
+ currentRoute=simulate(
+  normalizeAngle(Math.round(angle*10)/10),
+  +$("bounce").value,
+  rules
+ );
+
+ showRouteState("角度を微調整中");
+}
+
+function refineNearCurrent(){
+ if(!currentRoute)return;
+
+ const rules=buildRules();
+ const error=validateRules(rules);
+
+ if(error){
+  setStatus(error);
+  return;
+ }
+
+ if(!validStart()){
+  setStatus("スタートキャラを盤面の内側に配置してください。");
+  return;
+ }
+
+ const center=currentRoute.angle;
+ const max=+$("bounce").value;
+
+ let best=null;
+ let bestScore=Infinity;
+
+ // 現在角度の前後5度を0.1度刻みで探索
+ for(let k=-50;k<=50;k++){
+  const angle=normalizeAngle(
+   Math.round((center+k*.1)*10)/10
+  );
+
+  const c=simulate(angle,max,rules);
+
+  const score=
+   (c.success?0:100000)+
+   (rules.ordered.length-c.progress)*1000+
+   (c.invalid?500:0)+
+   angleDiff(angle,center)*10+
+   c.hits.length*.01;
+
+  if(score<bestScore){
+   bestScore=score;
+   best=c;
+  }
+ }
+
+ if(best){
+  currentRoute=best;
+  showRouteState(
+   "ゴール位置に合わせて近い角度を再探索しました"
+  );
+ }
+}
+
+function search(){
+ const rules=buildRules();
+ const error=validateRules(rules);
+
+ if(error){
+  setStatus("条件エラー："+error);
+  return;
+ }
+
+ if(!validStart()){
+  setStatus(
+   "スタートキャラの円全体を盤面の内側に配置してください。"
+  );
   return;
  }
 
  const max=+$("bounce").value;
- const margin=+$("margin").value;
  const all=[];
 
- // 0.1度ずつ全方向を探索
- for(let i=0;i<3600;i++){
-  const c=simulate(i/10,max,margin);
-  if(c)all.push(c);
+ for(let k=0;k<3600;k++){
+  all.push(simulate(k/10,max,rules));
  }
 
  all.sort((a,b)=>{
-  if(a.success!==b.success)return a.success?-1:1;
-  if(a.success){
-   return b.unique-a.unique||
-          b.total-a.total||
-          a.wallHits.length-b.wallHits.length;
+  if(a.success!==b.success){
+   return a.success?-1:1;
   }
-  return a.miss-b.miss||
-         b.unique-a.unique||
-         b.total-a.total;
+
+  if(a.success){
+   return a.hits.length-b.hits.length;
+  }
+
+  return b.progress-a.progress ||
+   Number(a.invalid)-Number(b.invalid) ||
+   a.hits.length-b.hits.length;
  });
 
  const picked=[];
+
  for(const c of all){
-  if(picked.some(p=>{
-   const diff=Math.abs(((p.deg-c.deg+540)%360)-180);
-   return diff<2;
-  }))continue;
+  const similar=picked.some(
+   v=>angleDiff(v.angle,c.angle)<2
+  );
+
+  if(similar)continue;
+
   picked.push(c);
   if(picked.length>=5)break;
  }
 
- candidates=picked;
- selected=candidates.length?0:-1;
+ solutions=picked;
+ selected=picked.length?0:-1;
+ currentRoute=picked[selected]||null;
+ originalAngle=currentRoute?.angle??null;
+ hasSearched=true;
 
- const successCount=all.filter(c=>c.success).length;
- const best=all.find(c=>c.success);
+ visible=true;
+ $("show").textContent="🙈 枠を隠す";
 
- $("status").textContent=
-  `ボスを経由する角度：${all.length}件
-ゴールまで到達する角度：${successCount}件
-${best
- ? "最良候補：異なる壁 "+best.unique+"面、合計接触 "+best.total+"回"
- : "完全到達なし。黄色でゴールに近い候補を表示します。"}
-※ 壁の接触数はボスに触れた後から数えます。`;
+ const count=all.filter(c=>c.success).length;
 
- const results=$("results");
- results.innerHTML="";
+ setStatus(
+  `条件達成角度：${count}件 / 3600件
+${count?"緑色：条件達成ルート":"黄色：条件未達成の参考ルート"}
+候補を選んで、角度またはゴール位置を微調整できます。`
+ );
 
- candidates.forEach((c,i)=>{
+ const root=$("results");
+ root.innerHTML="";
+
+ picked.forEach((c,i)=>{
   const b=document.createElement("button");
-  b.className="result"+(i===selected?" selected":"");
+  b.className="result"+(i===selected?" active":"");
+
   b.textContent=
-   `候補${i+1}｜角度 ${c.deg.toFixed(1)}°｜`+
-   `壁 ${c.unique}面・合計${c.total}回｜`+
-   (c.success?"✅ ゴール到達":
-    "ゴールまで約"+Math.round(c.miss)+"px");
+   `候補${i+1}｜${c.angle.toFixed(1)}°｜`+
+   `条件 ${c.progress}/${rules.ordered.length}｜`+
+   `壁 ${c.wallTotal}回｜`+
+   (c.success?"✅ 達成":"未達成");
+
   b.onclick=()=>{
    selected=i;
-   document.querySelectorAll(".result").forEach((el,j)=>{
-    el.classList.toggle("selected",i===j);
+   currentRoute=c;
+   originalAngle=c.angle;
+
+   root.querySelectorAll("button").forEach((x,j)=>{
+    x.classList.toggle("active",j===i);
    });
-   draw();
+
+   showRouteState("候補"+(i+1)+"を選択しました");
   };
-  results.appendChild(b);
+
+  root.appendChild(b);
  });
+
+ updateAngleUI();
  draw();
 }
 
-$("search").onclick=runSearch;
+// =============================
+// 微調整ボタン
+// =============================
 
-$("clear").onclick=()=>{
- candidates=[];
- selected=-1;
- $("results").innerHTML="";
- $("status").textContent="ルートを消しました。";
- draw();
+$("angle").oninput=e=>{
+ updateManualAngle(Number(e.target.value));
 };
 
-function resetPositions(){
- board={x:35,y:H()*.15,w:W()-70,h:H()*.65};
- start={x:W()*.30,y:H()*.55};
- boss={x:W()*.72,y:H()*.32,r:W()*.16};
- goal={x:W()*.73,y:H()*.32,r:W()*.09};
- candidates=[];
- selected=-1;
- $("results").innerHTML="";
- draw();
-}
+$("minus").onclick=()=>{
+ if(!currentRoute)return;
+ updateManualAngle(currentRoute.angle-.1);
+};
 
-$("reset").onclick=()=>{
- resetPositions();
- $("status").textContent="配置をリセットしました。";
+$("plus").onclick=()=>{
+ if(!currentRoute)return;
+ updateManualAngle(currentRoute.angle+.1);
+};
+
+$("restore").onclick=()=>{
+ if(originalAngle===null)return;
+ updateManualAngle(originalAngle);
+};
+
+// =============================
+// その他のボタン
+// =============================
+
+$("search").onclick=search;
+
+$("clear").onclick=()=>{
+ clearRoutes();
+ setStatus("結果を消しました。");
+ draw();
 };
 
 $("bounce").oninput=e=>{
- $("bounceLabel").textContent=e.target.value;
+ $("bounceText").textContent=e.target.value;
+
+ if(currentRoute){
+  updateManualAngle(currentRoute.angle);
+ }
 };
 
-$("margin").oninput=e=>{
- $("marginLabel").textContent=e.target.value;
+$("reset").onclick=()=>{
+ initPositions();
+ setStatus("配置を初期化しました。");
 };
+
+// =============================
+// 画像読み込み
+// =============================
 
 $("file").onchange=e=>{
  const file=e.target.files?.[0];
  if(!file)return;
 
  const url=URL.createObjectURL(file);
- const im=new Image();
+ const image=new Image();
 
- im.onload=()=>{
-  image=im;
-  canvas.width=720;
-  canvas.height=Math.round(
-   720*im.naturalHeight/im.naturalWidth
+ image.onload=()=>{
+  img=image;
+  cv.width=720;
+  cv.height=Math.round(
+   720*image.naturalHeight/image.naturalWidth
   );
-  resetPositions();
-  setMode("board");
-  $("status").textContent=
-   "①盤面 → ②スタート → ③ボス → ④ゴール → 探索";
+
+  initPositions();
+  visible=false;
+  setEditing(false);
+
+  setStatus(
+   "画像を読み込みました。配置と条件を設定してください。"
+  );
+
   URL.revokeObjectURL(url);
  };
- im.onerror=()=>{
-  $("status").textContent="画像の読み込みに失敗しました。";
+
+ image.onerror=()=>{
+  setStatus("画像を読み込めませんでした。");
   URL.revokeObjectURL(url);
  };
- im.src=url;
+
+ image.src=url;
 };
 
 $("demo").onclick=()=>{
- image=null;
- canvas.width=720;
- canvas.height=1150;
- resetPositions();
- setMode("move");
- $("status").textContent=
-  "デモ配置です。ルートを自動探索してみてください。";
+ img=null;
+ cv.width=720;
+ cv.height=1559;
+
+ initPositions();
+ visible=false;
+ setEditing(false);
+
+ setStatus("デモ配置です。");
 };
 
+// =============================
+// 初期化
+// =============================
+
+steps=[
+ {type:"boss",mode:"touch"},
+ {type:"wall",mode:"3"},
+ {type:"object",mode:"avoid"},
+ {type:"goal",mode:"last"}
+];
+
+renderSteps();
+initPositions();
+visible=false;
 draw();
+
 })();
 </script>
 </body>
